@@ -3771,6 +3771,703 @@
 
 // export default Cuti;
 
+//ini masih berantakan tapi logic semua clear
+// "use client";
+// import { useState, useEffect } from "react";
+// import { useRouter } from "next/navigation";
+// import {
+//   doc,
+//   setDoc,
+//   query,
+//   where,
+//   getDocs,
+//   getDoc,
+//   collection,
+//   serverTimestamp,
+// } from "firebase/firestore";
+// import { db } from "@/firebase/firebase";
+// import Navbar from "@/components/Navbar";
+
+// const Cuti = () => {
+//   const [formData, setFormData] = useState({
+//     username: "",
+//     fullname: "",
+//     email: "",
+//     password: "",
+//     confirmPassword: "",
+//     reason: "",
+//     bank: "BNI",
+//     accountNumber: "",
+//     salary: 0,
+//     amount: "",
+//     amountHamil: "",
+//     amountLahiran: "",
+//     startDate: "",
+//     endDate: "",
+//     jenisCuti: "",
+//   });
+//   const [errors, setErrors] = useState({});
+//   const [toastMessage, setToastMessage] = useState(null);
+//   const [isLoading, setIsLoading] = useState(false);
+//   const [cutiCount, setCutiCount] = useState(0);
+//   const [isFormVisible, setIsFormVisible] = useState(true);
+//   const router = useRouter();
+
+//   useEffect(() => {
+//     const fetchUserData = async () => {
+//       const userProfile = localStorage.getItem("userProfile");
+//       if (userProfile) {
+//         const userData = JSON.parse(userProfile);
+//         setFormData({
+//           ...formData,
+//           username: userData.name,
+//           fullname: userData.name,
+//           email: userData.email,
+//           password: userData.password,
+//           confirmPassword: userData.password,
+//         });
+
+//         const usersCutiCollection = query(
+//           collection(db, "usersCuti"),
+//           where("email", "==", userData.email)
+//         );
+//         const cutiSnapshot = await getDocs(usersCutiCollection);
+//         setCutiCount(cutiSnapshot.size);
+
+//         setIsFormVisible(cutiSnapshot.size < 3); // Maksimal 3 pengajuan
+//       }
+//     };
+//     fetchUserData();
+//   }, []);
+
+//   const handleInputChange = (e) => {
+//     const { name, value } = e.target;
+//     setFormData({ ...formData, [name]: value });
+//   };
+
+//   const handleCuti = async () => {
+//     try {
+//       let newErrors = {};
+//       // if (!formData.username) newErrors.username = "Username is required";
+//       // if (!formData.fullname) newErrors.fullname = "Fullname is required";
+//       if (!formData.reason) newErrors.reason = "Reason is required";
+//       // if (!formData.email) {
+//       //   newErrors.email = "Email is required";
+//       // } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+//       //   newErrors.email = "Email address is invalid";
+//       // }
+//       // if (!formData.password) {
+//       //   newErrors.password = "Password is required";
+//       // } else if (formData.password !== formData.confirmPassword) {
+//       //   newErrors.confirmPassword = "Passwords do not match";
+//       // }
+//       if (!formData.startDate) {
+//         newErrors.startDate = "Start date is required";
+//       }
+//       if (!formData.endDate) {
+//         newErrors.endDate = "End date is required";
+//       } else if (new Date(formData.startDate) > new Date(formData.endDate)) {
+//         newErrors.endDate = "End date should be after start date";
+//       }
+//       if (!formData.jenisCuti) {
+//         newErrors.jenisCuti = "Jenis cuti is required";
+//       }
+//       // if (!formData.bank) {
+//       //   newErrors.bank = "Bank is required";
+//       // }
+//       // if (!formData.accountNumber) {
+//       //   newErrors.accountNumber = "Account number is required";
+//       // }
+
+//       setErrors(newErrors);
+
+//       if (Object.keys(newErrors).length > 0 || !isFormVisible) return;
+
+//       setIsLoading(true);
+
+//       // Get current totalCuti for the user
+//       const userDocRef = doc(db, "usersCuti", formData.email);
+//       const userDoc = await getDoc(userDocRef);
+//       let currentTotalCuti = 12; // Initialize to 12 if no document exists
+//       if (userDoc.exists()) {
+//         currentTotalCuti = userDoc.data().totalCuti || 12;
+//       }
+
+//       // const cutiAmount = 
+//       //   formData.jenisCuti === "cuti hamil" ? parseInt(formData.amountHamil || 0) :
+//       //   formData.jenisCuti === "cuti lahiran" ? parseInt(formData.amountLahiran || 0) :
+//       //   parseInt(formData.amount || 0);
+
+//       // const newTotalCuti = Math.max(currentTotalCuti - cutiAmount, 0);
+//       const newTotalCuti = Math.max(currentTotalCuti - parseInt(formData.amount), 0);
+
+//       const userData = {
+//         ...formData,
+//         role: "user",
+//         status: "online",
+//         withDrawalStatus: "nothing",
+//         balance: 0,
+//         totalCuti: newTotalCuti,
+//       };
+
+//       // Data for userPengajuanCuti collection
+//       const cutiData = {
+//         ...userData,
+//         timeStamp: serverTimestamp(),
+//         status: "pending",
+//       };
+
+//       // Add to usersCuti collection
+//       await setDoc(userDocRef, userData);
+
+//       // Add to userPengajuanCuti collection
+//       const cutiDocRef = doc(
+//         db,
+//         "userPengajuanCuti",
+//         formData.email + "_" + Date.now()
+//       );
+//       await setDoc(cutiDocRef, cutiData);
+
+//       setToastMessage("Cuti berhasil diajukan.");
+//       setFormData({
+//         username: "",
+//         fullname: "",
+//         email: "",
+//         password: "",
+//         confirmPassword: "",
+//         reason: "",
+//         bank: "BNI",
+//         accountNumber: "",
+//         salary: 0,
+//         amount: "",
+//         amountHamil: "",
+//         amountLahiran: "",
+//         startDate: "",
+//         endDate: "",
+//         jenisCuti: "",
+//       });
+
+//       setCutiCount(cutiCount + 1);
+//       if (cutiCount + 1 >= 3) setIsFormVisible(false);
+//     } catch (error) {
+//       console.error("Error submitting cuti:", error);
+//       setToastMessage("Error submitting cuti. Please try again.");
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   return (
+//     <div className="bg-sky-200 min-h-screen flex flex-col">
+//       <Navbar />
+//       {isFormVisible && (
+//         <div className="max-w-xl mx-auto p-6 bg-white md:border rounded-md md:shadow-md mt-36">
+//           {/* <h2 className="text-2xl font-semibold mb-6">
+//             Data Diri & Pengajuan Cuti
+//           </h2> */}
+//           <form>
+//             {/* Existing Inputs */}
+//             <div className="mb-4">
+//               <label className="block text-sm font-medium text-gray-700">
+//                 Jenis Cuti
+//               </label>
+//               <select
+//                 name="jenisCuti"
+//                 value={formData.jenisCuti}
+//                 onChange={handleInputChange}
+//                 className="mt-1 p-2 block w-full border rounded-md"
+//               >
+//                 <option value="">Pilih Jenis Cuti</option>
+//                 <option value="cuti tahunan">Cuti Tahunan</option>
+//                 <option value="cuti hamil">Cuti Hamil</option>
+//                 <option value="cuti lahiran">Cuti Lahiran</option>
+//               </select>
+//               {errors.jenisCuti && (
+//                 <p className="text-red-500 text-sm">{errors.jenisCuti}</p>
+//               )}
+//             </div>
+//             {/* Conditional Inputs for Amount */}
+//             {formData.jenisCuti === "cuti hamil" && (
+//               <div className="mb-4">
+//                                 {/* <label className="block text-sm font-medium text-gray-700">
+//     Username
+//   </label>
+//   <input
+//     type="text"
+//     name="username"
+//     value={formData.username}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   />
+//   {errors.username && (
+//     <p className="text-red-500 text-sm">{errors.username}</p>
+//   )} */}
+//   {/* <label className="block text-sm font-medium text-gray-700">
+//     Fullname
+//   </label>
+//   <input
+//     type="text"
+//     name="fullname"
+//     value={formData.fullname}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   />
+//   {errors.fullname && (
+//     <p className="text-red-500 text-sm">{errors.fullname}</p>
+//   )} */}
+//   {/* <label className="block text-sm font-medium text-gray-700">
+//     Email
+//   </label>
+//   <input
+//     type="email"
+//     name="email"
+//     value={formData.email}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   />
+//   {errors.email && (
+//     <p className="text-red-500 text-sm">{errors.email}</p>
+//   )}
+//   <label className="block text-sm font-medium text-gray-700">
+//     Password
+//   </label>
+//   <input
+//     type="password"
+//     name="password"
+//     value={formData.password}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   />
+//   {errors.password && (
+//     <p className="text-red-500 text-sm">{errors.password}</p>
+//   )}
+//   <label className="block text-sm font-medium text-gray-700">
+//     Confirm Password
+//   </label>
+//   <input
+//     type="password"
+//     name="confirmPassword"
+//     value={formData.confirmPassword}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   />
+//   {errors.confirmPassword && (
+//     <p className="text-red-500 text-sm">
+//       {errors.confirmPassword}
+//     </p>
+//   )} */}
+//   <label className="block text-sm font-medium text-gray-700">
+//     Reason
+//   </label>
+//   <textarea
+//     name="reason"
+//     value={formData.reason}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   />
+//   {errors.reason && (
+//     <p className="text-red-500 text-sm">{errors.reason}</p>
+//   )}
+//   {/* <label className="block text-sm font-medium text-gray-700">
+//     Bank
+//   </label>
+//   <select
+//     name="bank"
+//     value={formData.bank}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   >
+//     <option value="BNI">BNI</option>
+//     <option value="BRI">BRI</option>
+//     <option value="BCA">BCA</option>
+//     <option value="Mandiri">Mandiri</option>
+//   </select>
+//   <label className="block text-sm font-medium text-gray-700">
+//     Account Number
+//   </label>
+//   <input
+//     type="text"
+//     name="accountNumber"
+//     value={formData.accountNumber}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   /> */}
+//   <label className="block text-sm font-medium text-gray-700">
+//       Jumlah Hari Cuti
+//     </label>
+//     <input
+//       type="text"
+//       name="amount"
+//       value={formData.amount}
+//       onChange={handleInputChange}
+//       className="mt-1 p-2 block w-full border rounded-md"
+//     />
+//     <label className="block text-sm font-medium text-gray-700">
+//     Start Date
+//   </label>
+//   <input
+//     type="date"
+//     name="startDate"
+//     value={formData.startDate}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   />
+//   {errors.startDate && (
+//     <p className="text-red-500 text-sm">{errors.startDate}</p>
+//   )}
+//   <label className="block text-sm font-medium text-gray-700">
+//     End Date
+//   </label>
+//   <input
+//     type="date"
+//     name="endDate"
+//     value={formData.endDate}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   />
+//   {errors.endDate && (
+//     <p className="text-red-500 text-sm">{errors.endDate}</p>
+//   )}
+//                 <label className="block text-sm font-medium text-gray-700">
+//                   Jumlah Hari Cuti Hamil
+//                 </label>
+//                 <input
+//                   type="text"
+//                   name="amountHamil"
+//                   value={formData.amountHamil}
+//                   onChange={handleInputChange}
+//                   className="mt-1 p-2 block w-full border rounded-md"
+//                 />
+//               </div>
+//             )}
+//             {formData.jenisCuti === "cuti lahiran" && (
+//               <div className="mb-4">
+//                                 {/* <label className="block text-sm font-medium text-gray-700">
+//     Username
+//   </label>
+//   <input
+//     type="text"
+//     name="username"
+//     value={formData.username}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   />
+//   {errors.username && (
+//     <p className="text-red-500 text-sm">{errors.username}</p>
+//   )}
+//   <label className="block text-sm font-medium text-gray-700">
+//     Fullname
+//   </label>
+//   <input
+//     type="text"
+//     name="fullname"
+//     value={formData.fullname}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   />
+//   {errors.fullname && (
+//     <p className="text-red-500 text-sm">{errors.fullname}</p>
+//   )}
+//   <label className="block text-sm font-medium text-gray-700">
+//     Email
+//   </label>
+//   <input
+//     type="email"
+//     name="email"
+//     value={formData.email}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   />
+//   {errors.email && (
+//     <p className="text-red-500 text-sm">{errors.email}</p>
+//   )}
+//   <label className="block text-sm font-medium text-gray-700">
+//     Password
+//   </label>
+//   <input
+//     type="password"
+//     name="password"
+//     value={formData.password}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   />
+//   {errors.password && (
+//     <p className="text-red-500 text-sm">{errors.password}</p>
+//   )}
+//   <label className="block text-sm font-medium text-gray-700">
+//     Confirm Password
+//   </label>
+//   <input
+//     type="password"
+//     name="confirmPassword"
+//     value={formData.confirmPassword}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   />
+//   {errors.confirmPassword && (
+//     <p className="text-red-500 text-sm">
+//       {errors.confirmPassword}
+//     </p>
+//   )} */}
+//   <label className="block text-sm font-medium text-gray-700">
+//     Reason
+//   </label>
+//   <textarea
+//     name="reason"
+//     value={formData.reason}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   />
+//   {errors.reason && (
+//     <p className="text-red-500 text-sm">{errors.reason}</p>
+//   )}
+//   {/* <label className="block text-sm font-medium text-gray-700">
+//     Bank
+//   </label>
+//   <select
+//     name="bank"
+//     value={formData.bank}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   >
+//     <option value="BNI">BNI</option>
+//     <option value="BRI">BRI</option>
+//     <option value="BCA">BCA</option>
+//     <option value="Mandiri">Mandiri</option>
+//   </select>
+//   <label className="block text-sm font-medium text-gray-700">
+//     Account Number
+//   </label>
+//   <input
+//     type="text"
+//     name="accountNumber"
+//     value={formData.accountNumber}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   /> */}
+//   <label className="block text-sm font-medium text-gray-700">
+//       Jumlah Hari Cuti
+//     </label>
+//     <input
+//       type="text"
+//       name="amount"
+//       value={formData.amount}
+//       onChange={handleInputChange}
+//       className="mt-1 p-2 block w-full border rounded-md"
+//     />
+//     <label className="block text-sm font-medium text-gray-700">
+//     Start Date
+//   </label>
+//   <input
+//     type="date"
+//     name="startDate"
+//     value={formData.startDate}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   />
+//   {errors.startDate && (
+//     <p className="text-red-500 text-sm">{errors.startDate}</p>
+//   )}
+//   <label className="block text-sm font-medium text-gray-700">
+//     End Date
+//   </label>
+//   <input
+//     type="date"
+//     name="endDate"
+//     value={formData.endDate}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   />
+//   {errors.endDate && (
+//     <p className="text-red-500 text-sm">{errors.endDate}</p>
+//   )}
+//                 <label className="block text-sm font-medium text-gray-700">
+//                   Jumlah Hari Cuti Lahiran
+//                 </label>
+//                 <input
+//                   type="text"
+//                   name="amountLahiran"
+//                   value={formData.amountLahiran}
+//                   onChange={handleInputChange}
+//                   className="mt-1 p-2 block w-full border rounded-md"
+//                 />
+//               </div>
+//             )}
+//             {formData.jenisCuti === "cuti tahunan" && (
+//               <div className="mb-4">
+//                 {/* <label className="block text-sm font-medium text-gray-700">
+//     Username
+//   </label>
+//   <input
+//     type="text"
+//     name="username"
+//     value={formData.username}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   />
+//   {errors.username && (
+//     <p className="text-red-500 text-sm">{errors.username}</p>
+//   )}
+//   <label className="block text-sm font-medium text-gray-700">
+//     Fullname
+//   </label>
+//   <input
+//     type="text"
+//     name="fullname"
+//     value={formData.fullname}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   />
+//   {errors.fullname && (
+//     <p className="text-red-500 text-sm">{errors.fullname}</p>
+//   )}
+//   <label className="block text-sm font-medium text-gray-700">
+//     Email
+//   </label>
+//   <input
+//     type="email"
+//     name="email"
+//     value={formData.email}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   />
+//   {errors.email && (
+//     <p className="text-red-500 text-sm">{errors.email}</p>
+//   )}
+//   <label className="block text-sm font-medium text-gray-700">
+//     Password
+//   </label>
+//   <input
+//     type="password"
+//     name="password"
+//     value={formData.password}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   />
+//   {errors.password && (
+//     <p className="text-red-500 text-sm">{errors.password}</p>
+//   )}
+//   <label className="block text-sm font-medium text-gray-700">
+//     Confirm Password
+//   </label>
+//   <input
+//     type="password"
+//     name="confirmPassword"
+//     value={formData.confirmPassword}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   />
+//   {errors.confirmPassword && (
+//     <p className="text-red-500 text-sm">
+//       {errors.confirmPassword}
+//     </p>
+//   )} */}
+//   <label className="block text-sm font-medium text-gray-700">
+//     Reason
+//   </label>
+//   <textarea
+//     name="reason"
+//     value={formData.reason}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   />
+//   {errors.reason && (
+//     <p className="text-red-500 text-sm">{errors.reason}</p>
+//   )}
+//   {/* <label className="block text-sm font-medium text-gray-700">
+//     Bank
+//   </label>
+//   <select
+//     name="bank"
+//     value={formData.bank}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   >
+//     <option value="BNI">BNI</option>
+//     <option value="BRI">BRI</option>
+//     <option value="BCA">BCA</option>
+//     <option value="Mandiri">Mandiri</option>
+//   </select>
+//   <label className="block text-sm font-medium text-gray-700">
+//     Account Number
+//   </label>
+//   <input
+//     type="text"
+//     name="accountNumber"
+//     value={formData.accountNumber}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   /> */}
+//   <label className="block text-sm font-medium text-gray-700">
+//       Jumlah Hari Cuti
+//     </label>
+//     <input
+//       type="text"
+//       name="amount"
+//       value={formData.amount}
+//       onChange={handleInputChange}
+//       className="mt-1 p-2 block w-full border rounded-md"
+//     />
+//     <label className="block text-sm font-medium text-gray-700">
+//     Start Date
+//   </label>
+//   <input
+//     type="date"
+//     name="startDate"
+//     value={formData.startDate}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   />
+//   {errors.startDate && (
+//     <p className="text-red-500 text-sm">{errors.startDate}</p>
+//   )}
+//   <label className="block text-sm font-medium text-gray-700">
+//     End Date
+//   </label>
+//   <input
+//     type="date"
+//     name="endDate"
+//     value={formData.endDate}
+//     onChange={handleInputChange}
+//     className="mt-1 p-2 block w-full border rounded-md"
+//   />
+//   {errors.endDate && (
+//     <p className="text-red-500 text-sm">{errors.endDate}</p>
+//   )}
+
+//               </div>
+              
+//             )}
+//             <div className="mt-6">
+//               <button
+//                 type="button"
+//                 onClick={handleCuti}
+//                 className="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700"
+//                 disabled={isLoading}
+//               >
+//                 {isLoading ? "Loading..." : "Ajukan Cuti"}
+//               </button>
+//             </div>
+//           </form>
+//         </div>
+//       )}
+//       {!isFormVisible && (
+//         <p className="text-center text-red-600 mt-20">
+//           Anda sudah mencapai batas maksimal pengajuan cuti.
+//         </p>
+//       )}
+//       {toastMessage && (
+//         <p className="text-center mt-6 text-green-600">{toastMessage}</p>
+//       )}
+//     </div>
+//   );
+// };
+
+// export default Cuti;
+
+
+
+
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -3847,19 +4544,9 @@ const Cuti = () => {
   const handleCuti = async () => {
     try {
       let newErrors = {};
-      // if (!formData.username) newErrors.username = "Username is required";
-      // if (!formData.fullname) newErrors.fullname = "Fullname is required";
+
       if (!formData.reason) newErrors.reason = "Reason is required";
-      // if (!formData.email) {
-      //   newErrors.email = "Email is required";
-      // } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      //   newErrors.email = "Email address is invalid";
-      // }
-      // if (!formData.password) {
-      //   newErrors.password = "Password is required";
-      // } else if (formData.password !== formData.confirmPassword) {
-      //   newErrors.confirmPassword = "Passwords do not match";
-      // }
+
       if (!formData.startDate) {
         newErrors.startDate = "Start date is required";
       }
@@ -3871,12 +4558,6 @@ const Cuti = () => {
       if (!formData.jenisCuti) {
         newErrors.jenisCuti = "Jenis cuti is required";
       }
-      // if (!formData.bank) {
-      //   newErrors.bank = "Bank is required";
-      // }
-      // if (!formData.accountNumber) {
-      //   newErrors.accountNumber = "Account number is required";
-      // }
 
       setErrors(newErrors);
 
@@ -3891,11 +4572,6 @@ const Cuti = () => {
       if (userDoc.exists()) {
         currentTotalCuti = userDoc.data().totalCuti || 12;
       }
-
-      // const cutiAmount = 
-      //   formData.jenisCuti === "cuti hamil" ? parseInt(formData.amountHamil || 0) :
-      //   formData.jenisCuti === "cuti lahiran" ? parseInt(formData.amountLahiran || 0) :
-      //   parseInt(formData.amount || 0);
 
       // const newTotalCuti = Math.max(currentTotalCuti - cutiAmount, 0);
       const newTotalCuti = Math.max(currentTotalCuti - parseInt(formData.amount), 0);
@@ -3988,73 +4664,6 @@ const Cuti = () => {
             {/* Conditional Inputs for Amount */}
             {formData.jenisCuti === "cuti hamil" && (
               <div className="mb-4">
-                                {/* <label className="block text-sm font-medium text-gray-700">
-    Username
-  </label>
-  <input
-    type="text"
-    name="username"
-    value={formData.username}
-    onChange={handleInputChange}
-    className="mt-1 p-2 block w-full border rounded-md"
-  />
-  {errors.username && (
-    <p className="text-red-500 text-sm">{errors.username}</p>
-  )} */}
-  {/* <label className="block text-sm font-medium text-gray-700">
-    Fullname
-  </label>
-  <input
-    type="text"
-    name="fullname"
-    value={formData.fullname}
-    onChange={handleInputChange}
-    className="mt-1 p-2 block w-full border rounded-md"
-  />
-  {errors.fullname && (
-    <p className="text-red-500 text-sm">{errors.fullname}</p>
-  )} */}
-  {/* <label className="block text-sm font-medium text-gray-700">
-    Email
-  </label>
-  <input
-    type="email"
-    name="email"
-    value={formData.email}
-    onChange={handleInputChange}
-    className="mt-1 p-2 block w-full border rounded-md"
-  />
-  {errors.email && (
-    <p className="text-red-500 text-sm">{errors.email}</p>
-  )}
-  <label className="block text-sm font-medium text-gray-700">
-    Password
-  </label>
-  <input
-    type="password"
-    name="password"
-    value={formData.password}
-    onChange={handleInputChange}
-    className="mt-1 p-2 block w-full border rounded-md"
-  />
-  {errors.password && (
-    <p className="text-red-500 text-sm">{errors.password}</p>
-  )}
-  <label className="block text-sm font-medium text-gray-700">
-    Confirm Password
-  </label>
-  <input
-    type="password"
-    name="confirmPassword"
-    value={formData.confirmPassword}
-    onChange={handleInputChange}
-    className="mt-1 p-2 block w-full border rounded-md"
-  />
-  {errors.confirmPassword && (
-    <p className="text-red-500 text-sm">
-      {errors.confirmPassword}
-    </p>
-  )} */}
   <label className="block text-sm font-medium text-gray-700">
     Reason
   </label>
@@ -4067,30 +4676,6 @@ const Cuti = () => {
   {errors.reason && (
     <p className="text-red-500 text-sm">{errors.reason}</p>
   )}
-  {/* <label className="block text-sm font-medium text-gray-700">
-    Bank
-  </label>
-  <select
-    name="bank"
-    value={formData.bank}
-    onChange={handleInputChange}
-    className="mt-1 p-2 block w-full border rounded-md"
-  >
-    <option value="BNI">BNI</option>
-    <option value="BRI">BRI</option>
-    <option value="BCA">BCA</option>
-    <option value="Mandiri">Mandiri</option>
-  </select>
-  <label className="block text-sm font-medium text-gray-700">
-    Account Number
-  </label>
-  <input
-    type="text"
-    name="accountNumber"
-    value={formData.accountNumber}
-    onChange={handleInputChange}
-    className="mt-1 p-2 block w-full border rounded-md"
-  /> */}
   <label className="block text-sm font-medium text-gray-700">
       Jumlah Hari Cuti
     </label>
@@ -4141,73 +4726,6 @@ const Cuti = () => {
             )}
             {formData.jenisCuti === "cuti lahiran" && (
               <div className="mb-4">
-                                {/* <label className="block text-sm font-medium text-gray-700">
-    Username
-  </label>
-  <input
-    type="text"
-    name="username"
-    value={formData.username}
-    onChange={handleInputChange}
-    className="mt-1 p-2 block w-full border rounded-md"
-  />
-  {errors.username && (
-    <p className="text-red-500 text-sm">{errors.username}</p>
-  )}
-  <label className="block text-sm font-medium text-gray-700">
-    Fullname
-  </label>
-  <input
-    type="text"
-    name="fullname"
-    value={formData.fullname}
-    onChange={handleInputChange}
-    className="mt-1 p-2 block w-full border rounded-md"
-  />
-  {errors.fullname && (
-    <p className="text-red-500 text-sm">{errors.fullname}</p>
-  )}
-  <label className="block text-sm font-medium text-gray-700">
-    Email
-  </label>
-  <input
-    type="email"
-    name="email"
-    value={formData.email}
-    onChange={handleInputChange}
-    className="mt-1 p-2 block w-full border rounded-md"
-  />
-  {errors.email && (
-    <p className="text-red-500 text-sm">{errors.email}</p>
-  )}
-  <label className="block text-sm font-medium text-gray-700">
-    Password
-  </label>
-  <input
-    type="password"
-    name="password"
-    value={formData.password}
-    onChange={handleInputChange}
-    className="mt-1 p-2 block w-full border rounded-md"
-  />
-  {errors.password && (
-    <p className="text-red-500 text-sm">{errors.password}</p>
-  )}
-  <label className="block text-sm font-medium text-gray-700">
-    Confirm Password
-  </label>
-  <input
-    type="password"
-    name="confirmPassword"
-    value={formData.confirmPassword}
-    onChange={handleInputChange}
-    className="mt-1 p-2 block w-full border rounded-md"
-  />
-  {errors.confirmPassword && (
-    <p className="text-red-500 text-sm">
-      {errors.confirmPassword}
-    </p>
-  )} */}
   <label className="block text-sm font-medium text-gray-700">
     Reason
   </label>
@@ -4220,30 +4738,6 @@ const Cuti = () => {
   {errors.reason && (
     <p className="text-red-500 text-sm">{errors.reason}</p>
   )}
-  {/* <label className="block text-sm font-medium text-gray-700">
-    Bank
-  </label>
-  <select
-    name="bank"
-    value={formData.bank}
-    onChange={handleInputChange}
-    className="mt-1 p-2 block w-full border rounded-md"
-  >
-    <option value="BNI">BNI</option>
-    <option value="BRI">BRI</option>
-    <option value="BCA">BCA</option>
-    <option value="Mandiri">Mandiri</option>
-  </select>
-  <label className="block text-sm font-medium text-gray-700">
-    Account Number
-  </label>
-  <input
-    type="text"
-    name="accountNumber"
-    value={formData.accountNumber}
-    onChange={handleInputChange}
-    className="mt-1 p-2 block w-full border rounded-md"
-  /> */}
   <label className="block text-sm font-medium text-gray-700">
       Jumlah Hari Cuti
     </label>
@@ -4294,73 +4788,6 @@ const Cuti = () => {
             )}
             {formData.jenisCuti === "cuti tahunan" && (
               <div className="mb-4">
-                {/* <label className="block text-sm font-medium text-gray-700">
-    Username
-  </label>
-  <input
-    type="text"
-    name="username"
-    value={formData.username}
-    onChange={handleInputChange}
-    className="mt-1 p-2 block w-full border rounded-md"
-  />
-  {errors.username && (
-    <p className="text-red-500 text-sm">{errors.username}</p>
-  )}
-  <label className="block text-sm font-medium text-gray-700">
-    Fullname
-  </label>
-  <input
-    type="text"
-    name="fullname"
-    value={formData.fullname}
-    onChange={handleInputChange}
-    className="mt-1 p-2 block w-full border rounded-md"
-  />
-  {errors.fullname && (
-    <p className="text-red-500 text-sm">{errors.fullname}</p>
-  )}
-  <label className="block text-sm font-medium text-gray-700">
-    Email
-  </label>
-  <input
-    type="email"
-    name="email"
-    value={formData.email}
-    onChange={handleInputChange}
-    className="mt-1 p-2 block w-full border rounded-md"
-  />
-  {errors.email && (
-    <p className="text-red-500 text-sm">{errors.email}</p>
-  )}
-  <label className="block text-sm font-medium text-gray-700">
-    Password
-  </label>
-  <input
-    type="password"
-    name="password"
-    value={formData.password}
-    onChange={handleInputChange}
-    className="mt-1 p-2 block w-full border rounded-md"
-  />
-  {errors.password && (
-    <p className="text-red-500 text-sm">{errors.password}</p>
-  )}
-  <label className="block text-sm font-medium text-gray-700">
-    Confirm Password
-  </label>
-  <input
-    type="password"
-    name="confirmPassword"
-    value={formData.confirmPassword}
-    onChange={handleInputChange}
-    className="mt-1 p-2 block w-full border rounded-md"
-  />
-  {errors.confirmPassword && (
-    <p className="text-red-500 text-sm">
-      {errors.confirmPassword}
-    </p>
-  )} */}
   <label className="block text-sm font-medium text-gray-700">
     Reason
   </label>
@@ -4373,30 +4800,7 @@ const Cuti = () => {
   {errors.reason && (
     <p className="text-red-500 text-sm">{errors.reason}</p>
   )}
-  {/* <label className="block text-sm font-medium text-gray-700">
-    Bank
-  </label>
-  <select
-    name="bank"
-    value={formData.bank}
-    onChange={handleInputChange}
-    className="mt-1 p-2 block w-full border rounded-md"
-  >
-    <option value="BNI">BNI</option>
-    <option value="BRI">BRI</option>
-    <option value="BCA">BCA</option>
-    <option value="Mandiri">Mandiri</option>
-  </select>
-  <label className="block text-sm font-medium text-gray-700">
-    Account Number
-  </label>
-  <input
-    type="text"
-    name="accountNumber"
-    value={formData.accountNumber}
-    onChange={handleInputChange}
-    className="mt-1 p-2 block w-full border rounded-md"
-  /> */}
+
   <label className="block text-sm font-medium text-gray-700">
       Jumlah Hari Cuti
     </label>
@@ -4463,4 +4867,3 @@ const Cuti = () => {
 };
 
 export default Cuti;
-
